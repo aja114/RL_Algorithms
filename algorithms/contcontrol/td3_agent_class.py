@@ -2,20 +2,16 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 import random
 
-from env_class import Environment
-from actor_class import Actor
-from critic_class import Critic
-from noise_class import OUActionNoise, GaussActionNoise
+from ..base import env_class, agent_class
+from ..base.noise_class import OUNoise, GaussNoise
+from .actor_class import Actor
+from .critic_class import Critic
 
-
-class Agent:
+class Agent(agent_class.Agent):
 
     def __init__(self, TF_FLAGS, env_name, res_folder):
         ''' This class build the Agent that learns in the environment via the actor-critic algorithm. '''
-
-        self.env = Environment(env_name)
-        self.TF_FLAGS = TF_FLAGS
-        self.res_folder = res_folder
+        agent_class.Agent.__init__(self, TF_FLAGS, env_name, res_folder)
 
         # Define the actor network and a "stationary" target for the training
         self.actor_target = Actor(
@@ -57,18 +53,18 @@ class Agent:
         self.network_similarity(self.actor, self.actor_target)
 
         # Create the noise object to add to the actor network
-        self.exploration_noise = OUActionNoise(mean=np.zeros(
+        self.exploration_noise = OUNoise(mean=np.zeros(
             1), std_deviation=float(self.TF_FLAGS.actor_noise_dev) * np.ones(1))
-        self.smoothing_noise = GaussActionNoise(mean=0,
+        self.smoothing_noise = GaussNoise(mean=0,
             std_deviation=float(self.TF_FLAGS.target_noise_dev),
             size = self.env.get_action_size(),
             clip = self.TF_FLAGS.noise_clip)
 
-        # experience replay buffer
-        self.memory = []
-        self.memory_size = 1000000
+    def get_action(self, state):
+        return self.actor.get_action(state)
 
-        self.step_count = 0
+    def get_action_training(self, state):
+        return self.actor.get_action(state.reshape(1, -1), self.exploration_noise).reshape(-1)
 
     def update_agent(self):
         if len(self.memory) > self.TF_FLAGS.batch_size:
@@ -139,118 +135,3 @@ class Agent:
             except AssertionError as e:
                 e.args += (f'{network1.scope} and {network2.scope} don\'t have the same weights',)
                 raise
-
-    def add2memory(self, state, action, reward, new_state, done):
-        self.memory.append([state, action, reward, new_state, done])
-
-        # Discard the first half of the memory if the buffer is full
-        if len(self.memory) > self.memory_size:
-            self.memory = self.memory[int(self.memory_size)//2:]
-
-    def train_one_episode(self, max_iterations=500, render=False):
-        ''' Play an episode and train the agent '''
-
-        state = self.env.reset()
-
-        done = False
-        total_reward = 0
-        iters = 0
-
-        update_after = self.TF_FLAGS.update_after
-        update_every = self.TF_FLAGS.update_every
-        start_steps = self.TF_FLAGS.start_steps
-
-        # Loop for the episode until
-        # 1. An end state is reached
-        # 2. The maximum number of iterations is reached
-        while not done and iters < max_iterations:
-            self.step_count += 1
-
-            # Sample an action from the actor distribution
-            prev_state = state
-            if self.step_count > start_steps:
-                action = self.actor.get_action(state.reshape(1, -1), self.exploration_noise).reshape(-1)
-            else:
-                action = self.env.env.action_space.sample()
-
-            # Obtain a <state, reward, done> tuple from the environment
-            state, reward, done, _ = self.env.get_env().step(action)
-
-            # print("prev state: ", prev_state.shape)
-            # print("action: ", action.shape)
-            # print("state: ", state.shape)
-            # print("done: ", done)
-            # print("reward: ", reward)
-
-            total_reward += reward
-
-            if render:
-                self.env.render()
-
-            self.add2memory(prev_state, action, reward, state, done)
-
-            if self.step_count >= update_after and self.step_count%update_every==0:
-                for _ in range(update_every):
-                    self.update_agent()
-
-            iters += 1
-
-        return total_reward
-
-    def train(self, num_episodes=100, display_step=10, max_iterations=500):
-        '''Run and train the agent for a particular number of episodes. '''
-
-        print("\n"+"*"*100)
-        print("TRAINING START\n")
-        total_rewards = []
-
-        for n in range(0, num_episodes):
-
-            if n % display_step == 0 and n >= display_step:
-                avg_reward = sum(
-                    total_rewards[n-display_step: n]) / display_step
-                print("episodes: %i, num steps: %i, avg_reward (last: %i episodes): %.2f" %
-                      (n, self.step_count, display_step, avg_reward))
-                if n>self.TF_FLAGS.start_steps:
-                    total_reward = self.train_one_episode(max_iterations, render=True)
-                    self.env.make_gif(f"{self.res_folder}/episode_number_{n}")
-                else:
-                    total_reward = self.train_one_episode(max_iterations, render=False)
-
-            else:
-                total_reward = self.train_one_episode(max_iterations)
-
-            with open(f"{self.res_folder}/result.csv", 'a') as f:
-                f.write(f"{n},{self.step_count},{total_reward}\n")
-
-            total_rewards.append(total_reward)
-
-        print("\n"+"*"*100)
-        print("TRAINING END\n")
-
-        return total_rewards
-
-    def play_one_episode(self, max_iterations=500):
-        '''Runs and records one episode using the trained actor and critic'''
-        # Get the initial state and reshape it
-        state = self.env.reset()
-        state = state.reshape(1, self.env.get_state_size())
-        done = False
-        iters = 0
-        total_reward = 0
-
-        # Loop for the episode
-        while not done and iters < max_iterations:
-
-            # Sample an action from the gauss distribution
-            action = self.actor.get_action(state)
-
-            # Obtain a <state, reward, done> tuple from the environment
-            state, reward, done, _ = self.env.get_env().step(action.reshape(-1))
-            state = state.reshape(1, self.env.get_state_size())
-            total_reward += reward
-
-            self.env.render()
-            iters += 1
-
-        return self.env.make_gif()

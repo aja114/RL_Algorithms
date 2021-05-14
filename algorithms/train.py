@@ -25,6 +25,8 @@ if algorithm == 'td3':
     from td3_agent_class import Agent
 elif algorithm == 'ddpg':
     from ddpg_agent_class import Agent
+elif algorithm == 'es'
+    from es_agent_class import Agent
 
 if os.path.exists(f"{res_folder}"):
     os.system(f"rm -f {res_folder}/*")
@@ -50,6 +52,7 @@ tf.app.flags.DEFINE_float('actor_noise_dev', 0.1, 'Standard deviation for the ex
 tf.app.flags.DEFINE_float('target_noise_dev', 0.2, 'Standard deviation for the smoothing noise component')
 tf.app.flags.DEFINE_float('noise_clip', 0.5, 'clip val for the smoothing noise component')
 tf.app.flags.DEFINE_integer('batch_size', 50, 'Batch size for the updates')
+tf.app.flags.DEFINE_integer('buffer_size', int(1*1e7), 'Size for the replay memory buffer')
 tf.app.flags.DEFINE_integer('update_after', int(1*1e3), 'when to start the updates')
 tf.app.flags.DEFINE_integer('update_every', 50, 'frequency at which to perform the updates')
 tf.app.flags.DEFINE_integer('start_steps', int(5*1e4), 'start sampling from the networks')
@@ -59,4 +62,4 @@ TF_FLAGS = tf.app.flags.FLAGS
 
 # Create and train the agent
 agent = Agent(TF_FLAGS, env_name, res_folder)
-total_rewards = agent.train(num_episodes=20001, display_step=1000, max_iterations=1000)
+total_rewards = agent.train(num_episodes=500, display_step=20, max_iterations=1000)

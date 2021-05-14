@@ -1,6 +1,6 @@
 import numpy as np
 
-class OUActionNoise:
+class OUNoise:
 
     def __init__(self, mean, std_deviation, theta=0.15, dt=1e-2, x_initial=None):
         self.theta = theta
@@ -36,7 +36,7 @@ class OUActionNoise:
         else:
             self.x_prev = np.zeros_like(self.mean)
 
-class GaussActionNoise:
+class GaussNoise:
 
     def __init__(self, mean=0, std_deviation=0.1, clip=0.3, size=None):
         self.mean = mean

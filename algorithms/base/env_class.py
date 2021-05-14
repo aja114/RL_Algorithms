@@ -40,6 +40,10 @@ class Environment:
         '''Getter function for the state-size in the environment '''
         return self.action_size
 
+    def get_random_action(self):
+        '''Getter function for the state-size in the environment '''
+        return self.env.action_space.sample()
+
     def make_gif(self, filename="render"):
         imageio.mimsave(filename + '.gif', [np.array(img) for i, img in enumerate(self.images) if i%2 == 0], fps=29)
         return Image(open(filename + '.gif','rb').read())
