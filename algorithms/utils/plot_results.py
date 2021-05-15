@@ -25,7 +25,6 @@ else:
         if os.path.isdir(d) and os.path.exists(os.path.join(d, "result.csv")):
             results_dirs.append(d)
 
-#window_size = 100
 for d in results_dirs:
     algorithm = d.split('_')[0].upper()
     name = ' '.join(d.split('_')[1:])
@@ -35,7 +34,7 @@ for d in results_dirs:
         columns={df.columns[0]: "episode", df.columns[-1]: "total_reward"})
     ep = df.episode
     r = df.total_reward
-    window_size = int(len(ep)/20)
+    window_size = int(len(ep) / 20)
     ma = moving_average(r, window_size)
 
     plt.figure(figsize=(15, 7))
@@ -44,7 +43,7 @@ for d in results_dirs:
     plt.title(f"{algorithm} results for the {name} environment")
     plt.scatter(ep, r, marker='+', c='b', s=30, linewidth=1,
                 alpha=0.5, label="total rewards")
-    plt.plot(ep[window_size-1:], ma, c='r',
+    plt.plot(ep[window_size - 1:], ma, c='r',
              alpha=0.7, label="reward moving average")
     plt.legend()
     plt.savefig(os.path.join(d, "results.png"))

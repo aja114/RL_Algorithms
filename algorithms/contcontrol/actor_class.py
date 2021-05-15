@@ -42,7 +42,8 @@ class Actor:
                 self.states = tf.placeholder(tf.float32, shape=(
                     None, self.env.get_state_size()), name='states')
 
-                # Create the network with the goal of improving the action taken with respect to the critic choice
+                # Create the network with the goal of improving the action
+                # taken with respect to the critic choice
                 self.action = self.create_network()
                 self.q_network_gradient = tf.placeholder(tf.float32, shape=(
                     None, self.env.get_action_size()), name='q_network_gradients')
@@ -61,15 +62,16 @@ class Actor:
 
                 with tf.name_scope('train_policy_network'):
                     # self.train_opt = tf.train.AdamOptimizer(
-                    #     self.TF_FLAGS.learning_rate_Actor).apply_gradients(zip(self.policy_gradient_normalized, self.param))
+                    # self.TF_FLAGS.learning_rate_Actor).apply_gradients(zip(self.policy_gradient_normalized,
+                    # self.param))
                     self.train_opt = tf.train.AdamOptimizer(
-                        self.TF_FLAGS.learning_rate_Actor).apply_gradients(zip(self.policy_gradient_normalized, self.param))
+                        self.TF_FLAGS.actor_learning_rate).apply_gradients(zip(self.policy_gradient_normalized, self.param))
 
                 with tf.name_scope('update_actor_target'):
                     # Perform a soft update of the parameters: Actor network parameters = Local Parameters (LP) and Target network parameters (TP)
                     # TP = tau * LP + (1-tau) * TP
-                    self.update_opt = [tp.assign(tf.multiply(self.TF_FLAGS.tau, lp)+tf.multiply(
-                        1-self.TF_FLAGS.tau, tp)) for tp, lp in zip(self.target_network.param, self.param)]
+                    self.update_opt = [tp.assign(tf.multiply(self.TF_FLAGS.tau, lp) + tf.multiply(
+                        1 - self.TF_FLAGS.tau, tp)) for tp, lp in zip(self.target_network.param, self.param)]
 
                 with tf.name_scope('initialize_actor_target_network'):
                     # Set the parameters of the local network equal to the target one
@@ -131,7 +133,8 @@ class Actor:
 
         if noise is not None:
             # Adding noise to action and make sure action is within bounds
-            noisy_action = np.clip(action + noise(), self.min_action, self.max_action)
+            noisy_action = np.clip(
+                action + noise(), self.min_action, self.max_action)
             # print("get_action noisy action: ", action)
             return noisy_action
 

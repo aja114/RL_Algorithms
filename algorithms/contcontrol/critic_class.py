@@ -48,7 +48,8 @@ class Critic:
                 self.actions = tf.placeholder(tf.float32, shape=(
                     None, self.env.get_action_size()), name='actions')
 
-                # Create the network with the goal of predicting the action-value function
+                # Create the network with the goal of predicting the
+                # action-value function
                 self.q = self.create_network(scope='q_network')
                 self.q_targets = tf.placeholder(
                     tf.float32, shape=(None,), name='q_targets')
@@ -60,25 +61,28 @@ class Critic:
                 # print("Critic Param: ", self.param)
 
                 with tf.name_scope('q_network_loss'):
-                    # Difference between targets value and calculated ones by the model
+                    # Difference between targets value and calculated ones by
+                    # the model
                     self.loss = tf.losses.mean_squared_error(
                         self.q_targets, self.q)
 
                 with tf.name_scope('train_q_network'):
                     # Optimiser for the training of the critic network
                     self.train_opt = tf.train.AdamOptimizer(
-                        self.TF_FLAGS.learning_rate_Critic).minimize(self.loss)
+                        self.TF_FLAGS.critic_learning_rate).minimize(self.loss)
 
                 with tf.name_scope('q_network_gradient'):
-                    # Compute the gradients to be used for the actor model training
+                    # Compute the gradients to be used for the actor model
+                    # training
                     self.actor_loss = -tf.math.reduce_mean(self.q)
-                    self.gradients = tf.gradients(self.actor_loss, self.actions)
+                    self.gradients = tf.gradients(
+                        self.actor_loss, self.actions)
 
                 with tf.name_scope('update_q_target'):
                     # Perform a soft update of the parameters: Critic network parameters = Local Parameters (LP) and Target network parameters (TP)
                     # TP = tau * LP + (1-tau) * TP
-                    self.update_opt = [tp.assign(tf.multiply(self.TF_FLAGS.tau, lp)+tf.multiply(
-                        1-self.TF_FLAGS.tau, tp)) for tp, lp in zip(self.target_network.param, self.param)]
+                    self.update_opt = [tp.assign(tf.multiply(self.TF_FLAGS.tau, lp) + tf.multiply(
+                        1 - self.TF_FLAGS.tau, tp)) for tp, lp in zip(self.target_network.param, self.param)]
 
                 with tf.name_scope('initialize_q_target_network'):
                     # Set the parameters of the local network equal to the target one

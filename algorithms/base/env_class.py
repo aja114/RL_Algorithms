@@ -3,6 +3,7 @@ import numpy as np
 import imageio
 from IPython.display import Image
 
+
 class Environment:
 
     def __init__(self, env_name):
@@ -45,8 +46,9 @@ class Environment:
         return self.env.action_space.sample()
 
     def make_gif(self, filename="render"):
-        imageio.mimsave(filename + '.gif', [np.array(img) for i, img in enumerate(self.images) if i%2 == 0], fps=29)
-        return Image(open(filename + '.gif','rb').read())
+        imageio.mimsave(filename + '.gif', [np.array(img)
+                                            for i, img in enumerate(self.images) if i % 2 == 0], fps=29)
+        return Image(open(filename + '.gif', 'rb').read())
 
     def run_random_episode(self, render=False):
         current_state = self.reset()

@@ -3,6 +3,7 @@ import tensorflow.compat.v1 as tf
 import random
 from .env_class import Environment
 
+
 class Agent:
 
     def __init__(self, TF_FLAGS, env_name, res_folder):
@@ -32,7 +33,7 @@ class Agent:
 
         # Discard the first half of the memory if the buffer is full
         if len(self.memory) > self.memory_size:
-            self.memory = self.memory[int(self.memory_size)//2:]
+            self.memory = self.memory[int(self.memory_size) // 2:]
 
     def train_one_episode(self, max_iterations=500, render=False):
         ''' Play an episode and train the agent '''
@@ -69,7 +70,7 @@ class Agent:
 
             self.add2memory(prev_state, action, reward, state, done)
 
-            if self.step_count >= update_after and self.step_count%update_every==0:
+            if self.step_count >= update_after and self.step_count % update_every == 0:
                 for _ in range(update_every):
                     self.update_agent()
 
@@ -80,7 +81,7 @@ class Agent:
     def train(self, num_episodes=100, display_step=10, max_iterations=500):
         '''Run and train the agent for a particular number of episodes. '''
 
-        print("\n"+"*"*100)
+        print("\n" + "*" * 100)
         print("TRAINING START\n")
         total_rewards = []
 
@@ -88,10 +89,11 @@ class Agent:
 
             if n % display_step == 0 and n >= display_step:
                 avg_reward = sum(
-                    total_rewards[n-display_step: n]) / display_step
+                    total_rewards[n - display_step: n]) / display_step
                 print("episodes: %i, num steps: %i, avg_reward (last: %i episodes): %.2f" %
                       (n, self.step_count, display_step, avg_reward))
-                total_reward = self.train_one_episode(max_iterations, render=True)
+                total_reward = self.train_one_episode(
+                    max_iterations, render=True)
                 self.env.make_gif(f"{self.res_folder}/episode_number_{n}")
             else:
                 total_reward = self.train_one_episode(max_iterations)
@@ -101,14 +103,14 @@ class Agent:
 
             total_rewards.append(total_reward)
 
-        print("\n"+"*"*100)
+        print("\n" + "*" * 100)
         print("TRAINING END\n")
 
         return total_rewards
 
     def play_one_episode(self, max_iterations=500):
-        '''Runs and records one episode using the trained actor and critic'''
-        # Get the initial state and reshape it
+        '''Runs and records one episode using actions from the agent'''
+        # Get the initial state
         state = self.env.reset()
         state = state.reshape(1, self.env.get_state_size())
         done = False
@@ -118,7 +120,7 @@ class Agent:
         # Loop for the episode
         while not done and iters < max_iterations:
 
-            # Sample an action from the gauss distribution
+            # Sample an action from the agent
             action = self.get_action(state)
 
             # Obtain a <state, reward, done> tuple from the environment

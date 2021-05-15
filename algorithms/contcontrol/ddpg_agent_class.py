@@ -7,6 +7,7 @@ from ..base.noise_class import OUNoise
 from .actor_class import Actor
 from .critic_class import Critic
 
+
 class Agent(agent_class.Agent):
 
     def __init__(self, TF_FLAGS, env_name, res_folder):
@@ -52,13 +53,14 @@ class Agent(agent_class.Agent):
         return self.actor.get_action(state)
 
     def get_action_training(self, state):
-        return self.actor.get_action(state.reshape(1, -1), self.actor_noise).reshape(-1)
+        return self.actor.get_action(state.reshape(
+            1, -1), self.actor_noise).reshape(-1)
 
     def update_agent(self):
         if len(self.memory) > self.TF_FLAGS.batch_size:
             # Randomly chose a batch from the replay buffer
             indexes = random.sample(
-                range(len(self.memory)-1), self.TF_FLAGS.batch_size)
+                range(len(self.memory) - 1), self.TF_FLAGS.batch_size)
 
             states = np.array([self.memory[i][0] for i in indexes])
             actions = np.array([self.memory[i][1] for i in indexes])
@@ -82,7 +84,8 @@ class Agent(agent_class.Agent):
             self.actor.update_target_parameter()
 
     def update_critic(self, states, actions, rewards, next_states, dones):
-        next_actions = np.array(self.actor.target_network.get_action(next_states))
+        next_actions = np.array(
+            self.actor.target_network.get_action(next_states))
         q_nexts = self.critic.target_network.calculate_Q(
             next_states, next_actions)
         q_targets = rewards + self.TF_FLAGS.gamma * q_nexts
@@ -106,7 +109,8 @@ class Agent(agent_class.Agent):
     def network_similarity(self, network1, network2):
         for lp, tp in zip(network1.param, network2.param):
             try:
-                assert np.array_equal(self.session.run(lp), self.session.run(tp))
+                assert np.array_equal(
+                    self.session.run(lp), self.session.run(tp))
             except AssertionError as e:
                 e.args += (f'{network1.scope} and {network2.scope} don\'t have the same weights',)
                 raise
