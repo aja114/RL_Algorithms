@@ -33,7 +33,7 @@ class Agent(agent_class.Agent):
             scope='local_2', target_network=self.critic_target_2, env=self.env, flags=TF_FLAGS)
 
         # Start the TF sessions
-        self.session = tf.InteractiveSession()
+        self.session = tf.Session()
         self.session.run(tf.global_variables_initializer())
 
         # Pass it to the four networks in total

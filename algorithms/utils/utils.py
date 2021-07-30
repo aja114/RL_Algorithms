@@ -24,3 +24,11 @@ def prepare_data_directory(res_path):
 
     with open(f"{res_path}/result.csv", 'w') as f:
         f.write("episodes,num_steps,reward\n")
+
+
+def store_training_config(res_path, args):
+    os.system(f"touch {res_path}/config.txt")
+
+    with open(f"{res_path}/config.txt", 'w') as f:
+        f.write(
+            '\n'.join(list([f'{str(k)}: {str(v)}' for k, v in args.items()])))

@@ -82,20 +82,19 @@ if __name__ == "__main__":
         parser.error("-e --env_name has to be a valid Gym environment.")
 
     res_path = get_data_location(flags.training_name, flags.algorithm)
-    prepare_data_directory(res_path)
-    store_training_config(res_path, vars(flags))
+    # prepare_data_directory(res_path)
+    # store_training_config(res_path, vars(flags))
+
+    tf.disable_eager_execution()
+    tf.set_random_seed(flags.random_seed)
 
     if flags.algorithm == 'td3':
         from algorithms.contcontrol.td3_agent_class import Agent
     elif flags.algorithm == 'ddpg':
         from algorithms.contcontrol.ddpg_agent_class import Agent
     elif flags.algorithm == 'es':
-        from algorithms.evstrat.es_agent_class import Agent
-
-    tf.disable_eager_execution()
-    tf.set_random_seed(flags.random_seed)
+        from algorithms.evstrat.es_agent_class import Population
 
     # Create and train the agent
-    agent = Agent(flags, flags.env_name, res_path)
-    total_rewards = agent.train(
-        num_episodes=500, display_step=20, max_iterations=1000)
+    pop = Population(flags, flags.env_name, res_path)
+    pop.train()

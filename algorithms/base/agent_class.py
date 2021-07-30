@@ -108,7 +108,7 @@ class Agent:
 
         return total_rewards
 
-    def play_one_episode(self, max_iterations=500):
+    def play_one_episode(self, max_iterations=500, render=False):
         '''Runs and records one episode using actions from the agent'''
         # Get the initial state
         state = self.env.reset()
@@ -128,7 +128,9 @@ class Agent:
             state = state.reshape(1, self.env.get_state_size())
             total_reward += reward
 
-            self.env.render()
+            if render:
+                self.env.render()
+
             iters += 1
 
-        return self.env.make_gif()
+        return total_reward

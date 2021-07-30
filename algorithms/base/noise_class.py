@@ -43,16 +43,31 @@ class OUNoise:
 
 class GaussNoise:
 
-    def __init__(self, mean=0, std_deviation=0.1, clip=0.3, size=None):
+    def __init__(self, mean=0, std_deviation=0.1, clip=None, size=None):
         self.mean = mean
         self.std = std_deviation
         self.size = size
         self.c = clip
 
     def __call__(self):
-        # Formula taken from
-        # https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process.
         x = np.random.normal(self.mean, self.std, self.size)
-        x = np.clip(x, -self.c, self.c)
+        if self.c:
+            x = np.clip(x, -self.c, self.c)
+
+        return x
+
+
+class MultiVarGaussNoise:
+
+    def __init__(self, mean=np.array([0]), std_deviation=np.array([[0.1]]), clip=None, size=None):
+        self.mean = mean
+        self.std = std_deviation
+        self.size = size
+        self.c = clip
+
+    def __call__(self):
+        x = np.random.multivariate_normal(self.mean, self.std, self.size)
+        if self.c:
+            x = np.clip(x, -self.c, self.c)
 
         return x

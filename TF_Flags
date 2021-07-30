@@ -1,0 +1,29 @@
+# Using flags for usefulness as they can be set when running the code from the command line
+tf.app.flags.DEFINE_float('learning_rate_Actor', 0.0001,
+                          'Learning rate for the policy estimator')
+tf.app.flags.DEFINE_float('learning_rate_Critic', 0.0001,
+                          'Learning rate for the state-value estimator')
+tf.app.flags.DEFINE_float('gamma', 0.99, 'Future discount factor')
+tf.app.flags.DEFINE_float(
+    'tau', 0.001, 'Update rate for the target networks parameter')
+tf.app.flags.DEFINE_float(
+    'actor_noise_dev', 0.1, 'Standard deviation for the exploration noise component')
+tf.app.flags.DEFINE_float('target_noise_dev', 0.2,
+                          'Standard deviation for the smoothing noise component')
+tf.app.flags.DEFINE_float(
+    'noise_clip', 0.5, 'clip val for the smoothing noise component')
+tf.app.flags.DEFINE_integer('batch_size', 50, 'Batch size for the updates')
+tf.app.flags.DEFINE_integer('buffer_size', int(
+    1*1e7), 'Size for the replay memory buffer')
+tf.app.flags.DEFINE_integer('update_after', int(
+    1*1e3), 'when to start the updates')
+tf.app.flags.DEFINE_integer(
+    'update_every', 50, 'frequency at which to perform the updates')
+tf.app.flags.DEFINE_integer('start_steps', int(
+    5*1e4), 'start sampling from the networks')
+tf.app.flags.DEFINE_integer('policy_delay', 4, 'policy delay')
+tf.app.flags.DEFINE_float('random_seed', 3,
+                          'random seed for the experiment')
+
+
+TF_FLAGS = tf.app.flags.FLAGS
