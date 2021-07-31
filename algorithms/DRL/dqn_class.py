@@ -8,7 +8,7 @@ class DQN:
         This class implements the deep Q-Learning agent
 
         :param scope: within this scope the parameters will be defined
-        :param target_network: instance of the Actor(target-network class)
+        :param target_network: instance of the DQN target-network class
         :param env: instance of the openAI environment
         :param FLAGS: TensorFlow flags which contain values for hyperparameters
 
@@ -16,93 +16,90 @@ class DQN:
 
         self.TF_FLAGS = flags
         self.env = env
-        self.scope = 'actor_' + scope
-        self.min_action = self.env.get_env().action_space.low
-        self.max_action = self.env.get_env().action_space.high
-        self.range_action = self.max_action - self.min_action
+        self.scope = 'dqn' + scope
 
         if 'target' in scope:
             with tf.variable_scope(scope):
 
                 self.states = tf.placeholder(tf.float32, shape=(
                     None, self.env.get_state_size()), name='states')
-                self.action = self.create_network()
+
+                self.q = self.create_network(scope='q_network_target')
                 self.param = tf.get_collection(
-                    tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
+                    tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope+'/q_network_target')
 
         elif 'local' in scope:
 
             with tf.variable_scope(scope):
-
                 # Add the target network instance
                 self.target_network = target_network
 
-                # Create the placeholders for the input to the network
-                self.states = tf.placeholder(tf.float32, shape=(
-                    None, self.env.get_state_size()), name='states')
+                # Create the placeholders for the inputs to the network
+                self.states = tf.placeholder(
+                    tf.float32, shape=(None, self.env.get_state_size()),
+                    name='states')
+                self.actions = tf.placeholder(
+                    tf.uint8, shape=(None, ), name='actions')
+                self.q_targets = tf.placeholder(
+                    tf.float32, shape=(None,), name='q_targets')
 
-                # Create the network with the goal of improving the action
-                # taken with respect to the critic choice
-                self.action = self.create_network()
-                self.q_network_gradient = tf.placeholder(tf.float32, shape=(
-                    None, self.env.get_action_size()), name='q_network_gradients')
+                # Create the network with the goal of predicting the
+                # action-value function
+                self.q = self.create_network(scope='q_network')
 
                 # The parameters of the network
                 self.param = tf.get_collection(
-                    tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
+                    tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/q_network')
 
-                # print("Actor Param: ", self.param)
 
-                with tf.name_scope('policy_gradients'):
-                    self.policy_gradient = tf.gradients(
-                        self.action, self.param, self.q_network_gradient)
-                    self.policy_gradient_normalized = list(
-                        map(lambda x: tf.div(x, self.TF_FLAGS.batch_size), self.policy_gradient))
+                with tf.name_scope('q_network_loss'):
+                    # Difference between targets value and calculated ones by
+                    # the model
+                    actions_one_hot = tf.one_hot(self.actions, self.env.get_action_size(),  1.0, 0.0, name='action_one_hot')
+                    q = tf.reduce_sum(self.q * actions_one_hot, reduction_indices=1, name='q_acted')
+                    self.loss = tf.losses.mean_squared_error(
+                        q, self.q_targets)
 
-                with tf.name_scope('train_policy_network'):
-                    # self.train_opt = tf.train.AdamOptimizer(
-                    # self.TF_FLAGS.learning_rate_Actor).apply_gradients(zip(self.policy_gradient_normalized,
-                    # self.param))
+                with tf.name_scope('train_q_network'):
                     self.train_opt = tf.train.AdamOptimizer(
-                        self.TF_FLAGS.actor_learning_rate).apply_gradients(zip(self.policy_gradient_normalized, self.param))
+                        self.TF_FLAGS.critic_learning_rate).minimize(self.loss)
 
-                with tf.name_scope('update_actor_target'):
-                    # Perform a soft update of the parameters: Actor network parameters = Local Parameters (LP) and Target network parameters (TP)
+                with tf.name_scope('update_q_target'):
+                    # Perform a soft update of the parameters: Critic network parameters = Local Parameters (LP) and Target network parameters (TP)
                     # TP = tau * LP + (1-tau) * TP
                     self.update_opt = [tp.assign(tf.multiply(self.TF_FLAGS.tau, lp) + tf.multiply(
                         1 - self.TF_FLAGS.tau, tp)) for tp, lp in zip(self.target_network.param, self.param)]
 
-                with tf.name_scope('initialize_actor_target_network'):
+                with tf.name_scope('initialize_q_target_network'):
                     # Set the parameters of the local network equal to the target one
                     # LP = TP
                     self.init_target_op = [tp.assign(lp) for tp, lp in zip(
                         self.target_network.param, self.param)]
 
-    def create_network(self):
+    def create_network(self, scope):
         '''Build the neural network that estimates the action for a given state '''
         first_layer_size = 400
         second_layer_size = 300
 
-        h1 = tf.layers.dense(
-            self.states, first_layer_size, tf.nn.relu, use_bias=True,
-            kernel_initializer=tf.initializers.glorot_normal(),
-            bias_initializer=tf.zeros_initializer()
-        )
+        with tf.variable_scope(scope):
+            h1 = tf.layers.dense(
+                self.states, first_layer_size, tf.nn.relu, use_bias=True,
+                kernel_initializer=tf.initializers.glorot_normal(),
+                bias_initializer=tf.zeros_initializer()
+            )
 
-        h2 = tf.layers.dense(
-            h1, second_layer_size, tf.nn.relu, use_bias=True,
-            kernel_initializer=tf.initializers.glorot_normal(),
-            bias_initializer=tf.zeros_initializer()
-        )
+            h2 = tf.layers.dense(
+                h1, second_layer_size, tf.nn.relu, use_bias=True,
+                kernel_initializer=tf.initializers.glorot_normal(),
+                bias_initializer=tf.zeros_initializer()
+            )
 
-        actions = tf.layers.dense(
-            h2, self.env.get_action_size(), activation=tf.tanh,
-            kernel_initializer=tf.initializers.glorot_normal()
-        )
+            actions = tf.layers.dense(
+                h2, self.env.get_action_size(), activation=None,
+                kernel_initializer=tf.initializers.glorot_normal()
+            )
 
-        scalled_actions = self.scale(actions)
-
-        return scalled_actions
+        return actions
 
     def set_session(self, session):
         '''Set the session '''
@@ -116,34 +113,28 @@ class DQN:
         '''Update the parameters of the target-network using a soft update'''
         self.session.run(self.update_opt)
 
-    def scale_actions(self, actions):
-        scaled_actions = actions * self.range_action + self.min_action
-        return scaled_actions
-
-    def get_action(self, states, noise=None):
+    def get_action(self, states):
         '''Get an action for a certain state '''
         feed_dict = {
             self.states: states
         }
-
-        action = self.session.run(self.action, feed_dict)
-
-        # print("get_action action: ", action)
-
-        if noise is not None:
-            # Adding noise to action and make sure action is within bounds
-            noisy_action = np.clip(
-                action + noise(), self.min_action, self.max_action)
-            # print("get_action noisy action: ", action)
-            return noisy_action
+        q_values = self.session.run(self.q, feed_dict)
+        action = np.argmax(q_values, axis=1)
 
         return action
 
-    def train(self, states, q_gradient):
-        '''Train the actor network '''
+    def train(self, states, actions, targets):
+        '''Train the q network '''
         feed_dict = {
-            self.q_network_gradient: q_gradient,
-            self.states: states
+            self.states: states,
+            self.actions: actions,
+            self.q_targets: targets
         }
 
         self.session.run(self.train_opt, feed_dict)
+
+        # loss = self.session.run(self.loss, feed_dict)
+        # q_values = self.session.run(self.q, feed_dict)
+        #
+        # print("loss: ", loss)
+        # print("q_values: ", np.mean(q_values))

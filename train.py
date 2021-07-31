@@ -17,7 +17,7 @@ if __name__ == "__main__":
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
     env_list = get_env_list()
-    alg_list = ['es', 'td3', 'ddpg']
+    alg_list = ['es', 'td3', 'ddpg', 'dqn']
 
     parser = argparse.ArgumentParser(description='Process user inputs')
     parser.add_argument("-a", "--algorithm",
@@ -91,6 +91,8 @@ if __name__ == "__main__":
         from algorithms.contcontrol.ddpg_agent_class import Agent
     elif flags.algorithm == 'es':
         from algorithms.evstrat.es_agent_class import Agent
+    elif flags.algorithm == 'dqn':
+        from algorithms.drl.dqn_agent_class import Agent
 
     tf.disable_eager_execution()
     tf.set_random_seed(flags.random_seed)
@@ -98,4 +100,4 @@ if __name__ == "__main__":
     # Create and train the agent
     agent = Agent(flags, flags.env_name, res_path)
     total_rewards = agent.train(
-        num_episodes=500, display_step=20, max_iterations=1000)
+        num_episodes=600, display_step=10, max_iterations=200)

@@ -12,7 +12,7 @@ class Environment:
         """
         self.env = gym.make(env_name)
         self.state_size = len(self.env.observation_space.sample())
-        self.action_size = len(self.env.action_space.sample())
+        self.action_size = self.define_action_size(self.env)
 
         # Used to save a visual of one episode
         self.images = []
@@ -28,6 +28,15 @@ class Environment:
         which adds the every image of the rendering to a list'''
         img = self.env.render(mode='rgb_array')
         self.images.append(img)
+
+    def define_action_size(self, env):
+        action = env.action_space.sample()
+
+        if isinstance(action, int):
+            return env.action_space.n
+
+        if isinstance(action, np.ndarray):
+            return action.shape[0]
 
     def get_env(self):
         '''Getter function for the OpenAI Gym instance '''

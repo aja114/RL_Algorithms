@@ -11,35 +11,50 @@ from .critic_class import Critic
 class Agent(agent_class.Agent):
 
     def __init__(self, TF_FLAGS, env_name, res_folder):
-        ''' This class build the Agent that learns in the environment via the DQN algorithm. '''
+        ''' This class build the Agent that learns in the environment via the actor-critic algorithm. '''
 
         agent_class.Agent.__init__(self, TF_FLAGS, env_name, res_folder)
 
         # Define the actor network and a "stationary" target for the training
-        self.dqn_target = DQN(
+        self.actor_target = Actor(
             scope='target', target_network=None, env=self.env, flags=TF_FLAGS)
-        self.actor = DQN(
+        self.actor = Actor(
             scope='local', target_network=self.actor_target, env=self.env, flags=TF_FLAGS)
 
+        # Define the critic network and a "stationary" target for the training
+        self.critic_target = Critic(
+            scope='target', target_network=None, env=self.env, flags=TF_FLAGS)
+        self.critic = Critic(
+            scope='local', target_network=self.critic_target, env=self.env, flags=TF_FLAGS)
+
         # Start the TF sessions
-        self.session = tf.Session()
+        self.session = tf.InteractiveSession()
         self.session.run(tf.global_variables_initializer())
 
-        self.dqn.set_session(self.session)
-        self.dqn_target.set_session(self.session)
+        # Pass it to the four networks in total
+        self.critic.set_session(self.session)
+        self.actor.set_session(self.session)
+        self.actor_target.set_session(self.session)
+        self.critic_target.set_session(self.session)
 
         # Initialise network weights
-        self.dqn.init_target_network()
+        self.critic.init_target_network()
+        self.actor.init_target_network()
 
         # Assert the correct initialisation of both local and target
-        self.network_similarity(self.dqn, self.dqn_target)
+        self.network_similarity(self.critic, self.critic_target)
+        self.network_similarity(self.actor, self.actor_target)
 
+        # Create the noise object to add to the actor network
+        self.actor_noise = OUNoise(mean=np.zeros(
+            1), std_deviation=float(self.TF_FLAGS.actor_noise_dev) * np.ones(1))
 
     def get_action(self, state):
-        return self.dqn.get_action(state)
+        return self.actor.get_action(state)
 
     def get_action_training(self, state):
-        return self.dqn.get_action(state)
+        return self.actor.get_action(state.reshape(
+            1, -1), self.actor_noise).reshape(-1)
 
     def update_agent(self):
         if len(self.memory) > self.TF_FLAGS.batch_size:
@@ -90,6 +105,10 @@ class Agent(agent_class.Agent):
         # print("q_gradients: ", q_gradients.shape)
 
         self.actor.train(states, q_gradients)
+
+    def scale_actions(self, actions):
+        scaled_actions = actions * self.range_action + self.min_action
+        return scaled_actions
 
     def network_similarity(self, network1, network2):
         for lp, tp in zip(network1.param, network2.param):

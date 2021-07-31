@@ -93,8 +93,8 @@ class Agent:
                 print("episodes: %i, num steps: %i, avg_reward (last: %i episodes): %.2f" %
                       (n, self.step_count, display_step, avg_reward))
                 total_reward = self.train_one_episode(
-                    max_iterations, render=True)
-                self.env.make_gif(f"{self.res_folder}/episode_number_{n}")
+                    max_iterations, render=False)
+                # self.env.make_gif(f"{self.res_folder}/episode_number_{n}")
             else:
                 total_reward = self.train_one_episode(max_iterations)
 
