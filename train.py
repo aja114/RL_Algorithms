@@ -100,4 +100,4 @@ if __name__ == "__main__":
     # Create and train the agent
     agent = Agent(flags, flags.env_name, res_path)
     total_rewards = agent.train(
-        num_episodes=600, display_step=10, max_iterations=200)
+        num_episodes=600, display_step=20, max_iterations=700)

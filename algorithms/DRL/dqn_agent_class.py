@@ -11,7 +11,7 @@ class Agent(agent_class.Agent):
         ''' This class build the Agent that learns in the environment via the DQN algorithm. '''
         super().__init__(TF_FLAGS, env_name, res_folder)
 
-        self.epsilon = 0.05
+        self.epsilon = 0.1
 
         # Define the actor network and a "stationary" target for the training
         self.dqn_target = DQN(
@@ -44,6 +44,7 @@ class Agent(agent_class.Agent):
 
     def update_agent(self):
         if len(self.memory) > self.TF_FLAGS.batch_size:
+
             # Randomly chose a batch from the replay buffer
             indexes = random.sample(
                 range(len(self.memory) - 1), self.TF_FLAGS.batch_size)
@@ -61,11 +62,7 @@ class Agent(agent_class.Agent):
             self.dqn.update_target_parameter()
 
     def update_q_network(self, states, actions, rewards, next_states, dones):
-        feed_dict = {
-            self.dqn.target_network.states: next_states
-        }
-
-        q_nexts = self.session.run(tf.math.reduce_max(self.dqn.target_network.q, axis=1), feed_dict)
+        q_nexts = self.dqn.get_q_nexts(next_states)
         q_targets = rewards + self.TF_FLAGS.gamma * q_nexts * (1 - dones)
 
         # print("dones: ", dones[:5])

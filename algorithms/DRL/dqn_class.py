@@ -76,6 +76,9 @@ class DQN:
                     self.init_target_op = [tp.assign(lp) for tp, lp in zip(
                         self.target_network.param, self.param)]
 
+                with tf.name_scope('q_nexts'):
+                    self.q_nexts = tf.math.reduce_max(self.target_network.q, axis=1)
+
     def create_network(self, scope):
         '''Build the neural network that estimates the action for a given state '''
         first_layer_size = 400
@@ -122,6 +125,15 @@ class DQN:
         action = np.argmax(q_values, axis=1)
 
         return action
+
+    def get_q_nexts(self, next_states):
+        feed_dict = {
+            self.target_network.states: next_states
+        }
+
+        q_nexts = self.session.run(self.q_nexts, feed_dict)
+
+        return q_nexts
 
     def train(self, states, actions, targets):
         '''Train the q network '''

@@ -1,5 +1,6 @@
 from gym import envs
 import os
+import ast
 
 
 def get_env_list():
@@ -32,3 +33,18 @@ def store_training_config(res_path, args):
     with open(f"{res_path}/config.txt", 'w') as f:
         f.write(
             '\n'.join(list([f'{str(k)}: {str(v)}' for k, v in args.items()])))
+
+def load_training_config(file):
+    with open(file, 'r') as f:
+        data = f.readlines()
+
+    data = [x.split(': ') for x in data]
+    flags = {k.rstrip():tryeval(v.rstrip()) for k, v in data}
+    return flags
+
+def tryeval(val):
+  try:
+    val = ast.literal_eval(val)
+  except ValueError:
+    pass
+  return val

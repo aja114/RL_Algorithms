@@ -3,7 +3,6 @@ import tensorflow.compat.v1 as tf
 import random
 from .env_class import Environment
 
-
 class Agent:
 
     def __init__(self, TF_FLAGS, env_name, res_folder):
@@ -12,6 +11,8 @@ class Agent:
         self.env = Environment(env_name)
         self.TF_FLAGS = TF_FLAGS
         self.res_folder = res_folder
+
+        print(self.TF_FLAGS)
 
         # experience replay buffer
         self.memory = []
@@ -37,7 +38,6 @@ class Agent:
 
     def train_one_episode(self, max_iterations=500, render=False):
         ''' Play an episode and train the agent '''
-
         state = self.env.reset()
 
         done = False
@@ -52,6 +52,7 @@ class Agent:
         # 1. An end state is reached
         # 2. The maximum number of iterations is reached
         while not done and iters < max_iterations:
+
             self.step_count += 1
 
             # Sample an action from the actor distribution
@@ -93,8 +94,8 @@ class Agent:
                 print("episodes: %i, num steps: %i, avg_reward (last: %i episodes): %.2f" %
                       (n, self.step_count, display_step, avg_reward))
                 total_reward = self.train_one_episode(
-                    max_iterations, render=False)
-                # self.env.make_gif(f"{self.res_folder}/episode_number_{n}")
+                    max_iterations, render=True)
+                self.env.make_gif(f"{self.res_folder}/episode_number_{n}")
             else:
                 total_reward = self.train_one_episode(max_iterations)
 
