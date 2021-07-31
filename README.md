@@ -1,1 +1,1 @@
-Personal implementation of DDPG and TD3
+Personal implementation of Deep RL algorithms
